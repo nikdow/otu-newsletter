@@ -344,7 +344,7 @@ function save_cbdweb_newsletter(){
                 if ( ! $class_requested ) { // all classes, including ppl with no class
                     $class_requested = array("");
                 }
-                foreach ( $class_requestd as $clss ) {
+                foreach ( $class_requested as $clss ) {
                     if( $clss != '' ) {
                         preg_match('/^([\d]+)\/([\d]+)$/', $clss, $matches );
                         $params[] = intval ( $matches[1] );
@@ -411,7 +411,7 @@ function save_cbdweb_newsletter(){
                 $subject = $post->post_title;
                 if ( $testing ) $subject .= " - " . $one->email;
                 $headers = array();
-                $headers[] = 'From: ' . get_option('cbdweb_newsletter_sender-name') . " <" . get_option('cbdweb_newsletter_sender-address') . '>';
+                $headers[] = 'From: ' . get_option('cbdweb-newsletter-sender-name') . " <" . get_option('cbdweb-newsletter-sender-address') . '>';
                 $headers[] = "Content-type: text/html";
                 $message = $post->post_content;
                 wp_mail( $email, $subject, $message, $headers );
