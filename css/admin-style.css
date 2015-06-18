@@ -18,4 +18,30 @@
 .left { float: left; }
 .right { float: right; }
 
-
+#letters, #membertypes, #states, #clsses {
+    margin: 0 auto 5px auto;
+    width: 920px;
+}
+.letter, .membertype, .state, .clss, #download {
+    display: inline-block;
+    border: grey 1px solid;
+    width: auto;
+    text-align: center;
+    padding: 2px 5px;
+    margin-right: 2px;
+    background-color: #f1f3f3;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.letter {
+    width: 31px;    
+}
+.wider {
+    width: 50px;
+}
+.selected {
+    background-color: #ffcccc;
+}
+.hand {
+    cursor: pointer;
+}

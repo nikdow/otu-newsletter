@@ -49,31 +49,34 @@ function cbdweb_newsletter_options() {
             ?>
             <div class="wrap">
 
-            <h2>Newsletter Settings</h2>
+                <h2>Newsletter Settings</h2>
 
-            <form name="cbdweb_newsletter_options" id="cbdweb_newsletter_options" method="post" action="">
-                <input type="hidden" name="<?php echo $hidden_field_name; ?>" value="Y">
+                <form name="cbdweb_newsletter_options" id="cbdweb_newsletter_options" method="post" action="">
+                    <input type="hidden" name="<?php echo $hidden_field_name; ?>" value="Y">
 
-                <?php 
-                foreach ( $options_array as $option_array ) { 
-                    // Read in existing option value from database
-                    $opt_val = get_option( $option_array[ 'opt_name' ] );
-                    ?>
-                    <p><?php _e( $option_array[ 'opt_label' ] );
-                        if($option_array[ 'field_type' ] === 'textarea' ) { ?>
-                            <textarea name="<?php echo $option_array[ 'data_field_name' ]; ?>"><?php echo $opt_val; ?></textarea>
-                        <?php } else { ?>
-                            <input type="<?=$option_array[ 'field_type' ]?>" name="<?=$option_array[ 'data_field_name' ]?>" value="<?=$opt_val?>"/>
-                        <?php } ?>
+                    <?php 
+                    foreach ( $options_array as $option_array ) { 
+                        // Read in existing option value from database
+                        $opt_val = get_option( $option_array[ 'opt_name' ] );
+                        ?>
+                        <p><?php _e( $option_array[ 'opt_label' ] );
+                            if($option_array[ 'field_type' ] === 'textarea' ) { ?>
+                                <textarea name="<?php echo $option_array[ 'data_field_name' ]; ?>"><?php echo $opt_val; ?></textarea>
+                            <?php } else { ?>
+                                <input type="<?=$option_array[ 'field_type' ]?>" name="<?=$option_array[ 'data_field_name' ]?>" value="<?=$opt_val?>"/>
+                            <?php } ?>
+                        </p>
+                    <?php } ?>
+                    <hr />
+
+                    <p class="submit">
+                    <input type="submit" name="Submit" class="button-primary" value="<?php esc_attr_e('Save Changes') ?>" />
                     </p>
-                <?php } ?>
-                <hr />
-
-                <p class="submit">
-                <input type="submit" name="Submit" class="button-primary" value="<?php esc_attr_e('Save Changes') ?>" />
-                </p>
-
-            </form>
-        </div>
-    <?php
+                </form>
+                
+                <div>
+                    Newsletter query: <?=get_option( 'Newsletter_query' )?>
+                </div>
+            </div>
+        <?php
 }

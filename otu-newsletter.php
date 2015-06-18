@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Freestyle Cyclists Newsletter
+ * Plugin Name: OTU newsletter
  * Plugin URI: http://www.cbdweb.net
- * Description: Send email to paid members or petition signatures
+ * Description: Send email to paid and unpaid members
  * Version: 1.0
  * Author: Nik Dow, CBDWeb
  * License: GPL2
@@ -11,15 +11,29 @@ require_once plugin_dir_path ( __FILE__ ) . 'options.php';
 /*
  * Newsletters
  */
+
+define ( 'Newsletter_All_Classes', '' );
+define ( 'Newsletter_Unknown_State', '' );
+define ( 'Newsletter_Unfinancial', '' );
+
 function cbdweb_newsletter_enqueue_scripts(  ) {
     global $post;
     if( $post->post_type !== 'cbdweb_newsletter' ) return;
     wp_register_script( 'angular', "//ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js", 'jquery' );
+//    wp_register_script( 'angular', "/skimobile/websrc/assets/deca1dd9/javascript/lib/angular-1.2.12.js", 'jquery' );
     wp_enqueue_script('angular');
+    wp_register_script ( 'angular-dialog', get_stylesheet_directory_uri() . '/js/ngDialog.min.js', 'jquery' );
+    wp_enqueue_script('angular-dialog');
+    wp_enqueue_style('angular-dialog', get_stylesheet_directory_uri() . '/css/ngDialog.min.css' );
+    wp_enqueue_style ( 'ngDialog-theme-default', get_stylesheet_directory_uri() . '/css/ngDialog-theme-default.min.css' );
+    wp_enqueue_style ( 'ngDialog-theme-plain', get_stylesheet_directory_uri() . '/css/ngDialog-theme-plain.min.css' );
     wp_register_script('newsletter-admin', plugins_url( 'js/newsletter-admin.js' , __FILE__ ), array('jquery', 'angular') );
     wp_localize_script( 'newsletter-admin', '_main',
         array( 'post_url' => admin_url('post.php'),
                'ajax_url' => admin_url('admin-ajax.php'),
+               'all_classes' => Newsletter_All_Classes,
+               'unknown_state' => Newsletter_Unknown_State,
+               'unfinancial' => Newsletter_Unfinancial,
         ) 
     ); 
     wp_enqueue_script( 'newsletter-admin' );
@@ -86,13 +100,49 @@ function cbdweb_newsletter_custom_columns($column) {
             echo $post->post_title;
             break;
         case "cbdweb_col_class":
-            echo ! is_array( $newsletter_class[0] ) ? "&nbsp;" : implode ( ', ', $newsletter_class[0] );
+            if ( ! is_array( $newsletter_class[0] ) ) {
+                echo "&nbsp;";
+            } else {
+                $display_classes = [];
+                foreach ( $newsletter_class[0] as $class ) {
+                    if ( $class === Newsletter_All_Classes ) {
+                        $display_classes[] = "All";
+                    } else {
+                        $display_classes[] = $class;
+                    }
+                }
+                echo implode(', ', $display_classes );
+            }
             break;
         case "cbdweb_col_state":
-            echo ! is_array( $newsletter_state[0] ) ? "&nbsp;" : implode ( ', ', $newsletter_state[0] );
+            if ( ! is_array( $newsletter_state[0] ) ) {
+                echo "&nbsp;";
+            } else {
+                $display_states = [];
+                foreach ( $newsletter_state[0] as $state ) {
+                    if ( $state === Newsletter_Unknown_State ) {
+                        $display_states[] = "Unknown";
+                    } else {
+                        $display_states[] = $state;
+                    }
+                } 
+                echo implode(', ', $display_states );
+            }
             break;
         case "cbdweb_col_membertype":
-            echo ! is_array( $newsletter_membertype[0] ) ? "&nbsp;" : implode ( ', ', $newsletter_membertype[0] );
+            if ( ! is_array( $newsletter_membertype[0] ) ) {
+                echo "&nbsp;";
+            } else {
+                $display_membertypes = [];
+                foreach ( $newsletter_membertype[0] as $membertype ) {
+                    if ( $membertype === Newsletter_Unfinancial ) {
+                        $display_membertypes = "Unfinancial";
+                    } else {
+                        $display_membertypes = $membertype;
+                    }
+                }
+                echo implode ( ', ', $display_membertypes );
+            }
             break;
     }
 }
@@ -105,8 +155,8 @@ function cbdweb_newsletter_create() {
 }
 function cbdweb_newsletter_meta() {
     global $post;
-    $meta_class = get_post_meta( $post->ID, 'cbdweb_newsletter_class' );
-    $meta_state = get_post_meta( $post->ID, 'cbdweb_newsletter_state' ); // checkboxes stored as arrays
+    $meta_class = get_post_meta( $post->ID, 'cbdweb_newsletter_class' ); // array in meta_value
+    $meta_state = get_post_meta( $post->ID, 'cbdweb_newsletter_state' );
     $meta_membertype = get_post_meta ( $post->ID, 'cbdweb_newsletter_membertype' );
     
     echo '<input type="hidden" name="cbdweb-newsletter-nonce" id="cbdweb-newsletter-nonce" value="' .
@@ -119,19 +169,21 @@ function cbdweb_newsletter_meta() {
      */
     $query = "SELECT id, name FROM $wpdb->pmpro_membership_levels";
     $membertypes = $wpdb->get_results ( $query, OBJECT );
-    $data['membertypes'] = array();
-    $ngdata['membertypes'] = array();
-    foreach($membertypes as $membertype ) {
+    $data['membertypes'] = array();  // $data is for drawing the HTML in PHP, includes all possible objects
+    $ngdata['membertypes'] = array();  // $ngdata is the meta data status for display and return, includes selected objects
+    foreach( $membertypes as $membertype ) {
         $data['membertypes'][] = array('id'=>$membertype->id, 'name'=>$membertype->name );
-        $ngdata['membertypes'][$membertype->id] = is_array ( $meta_membertype[0] ) && in_array ( $membertype->id, $meta_membertype[0] );
+        if ( is_array ( $meta_membertype[0] ) && in_array ( $membertype->id, $meta_membertype[0] ) )
+            $ngdata['membertypes'][] = $membertype->id;
     }
     $data['membertypes'][] = array('id'=>'', 'name'=>"unfinancial");
-    $ngdata['membertypes'][''] = is_array( $meta_membertype[0] ) && in_array ( '', $meta_membertype[0] );
+    if ( is_array( $meta_membertype[0] ) && in_array ( Newsletter_Unfinancial, $meta_membertype[0] ) )
+        $ngdata['membertypes'][] = Newsletter_Unfinancial;
     
     /*
      * get States
      */
-    
+//  look at all non-admin users and get their State    
     $query = "SELECT IF(u.meta_value=\"Overseas\", \"ZZ\", u.meta_value) as mv FROM $wpdb->usermeta u " .
             "LEFT JOIN $wpdb->usermeta m ON m.user_id=u.user_id AND m.meta_key=\"wp_my0ord_user_level\" " .
             "WHERE u.meta_key=\"pmpro_bstate\" AND u.meta_value!=\"\" AND m.meta_value=0 GROUP BY u.meta_value ORDER BY mv";
@@ -143,13 +195,16 @@ function cbdweb_newsletter_meta() {
     $data['states'] = $states;
     $ngdata['states'] = array();
     foreach($data['states'] as $ab ) {
-        $ngdata['states'][$ab] = is_array( $meta_state[0] ) && in_array( $ab, $meta_state[0] );
+        if ( is_array( $meta_state[0] ) && in_array( $ab, $meta_state[0] ) )
+            $ngdata['states'][] = $ab;
     }
     $data['states'][] = "Unknown";
-    $ngdata['states'][] = is_array ( $meta_state[0] ) && in_array ( '', $meta_state[0] ); // '' state = unknown
+    if ( is_array ( $meta_state[0] ) && in_array ( Newsletter_Unknown_State, $meta_state[0] ) )
+        $ngdata['states'][] = Newsletter_Unknown_State;
     
     /*
      * get classes
+     * for all classes the meta_value is blank, this is the only parameter with an explicit "all" setting
      */
     $query = "SELECT meta_value AS clss FROM $wpdb->usermeta WHERE meta_key=\"pmpro_class\" GROUP BY meta_value";
     $results = $wpdb->get_results ( $query, OBJECT );
@@ -180,19 +235,20 @@ function cbdweb_newsletter_meta() {
     
     $ngdata['clsses'] = array();
     foreach($data['clsses'] as $ab ) {
-        $ngdata['clsses'][$ab] = is_array ( $meta_class[0] ) && in_array ( $ab, $meta_class[0] );
+        if ( is_array ( $meta_class[0] ) && in_array ( $ab, $meta_class[0] ) )
+            $ngdata['clsses'][] = $ab;
     }
-    $ngdata['clsses'][''] = is_array ( $meta_class[0] ) && in_array( '', $meta_class[0] );
+    if ( is_array ( $meta_class[0] ) && in_array( Newsletter_All_Classes, $meta_class[0] ) )
+        $ngdata['clsses'][] = Newsletter_All_Classes;
     ?>
     <script type="text/javascript">
-        _data = <?=json_encode($data)?>;
+//        _data = <?=json_encode($data)?>;
         _ngdata = <?=json_encode($ngdata)?>;
     </script>
     <div class="fs-meta" ng-app="newsletterAdmin" ng-controller="newsletterAdminCtrl">
 
-        <table><tr valign="top"><td width="60%">
             <div id='clsses'>
-                <div class='clss wider' ng-class='{selected: isClss("")}' ng-click='allclss(true)'>All</div>
+                <div class='clss wider' ng-class='{selected: isClss("<?=Newsletter_All_Classes?>")}' ng-click='allclss(true)'>All</div>
                 <?php
                 foreach ( $clsses as $clss ) {
                     echo "<div class='clss' ng-class='{selected: isClss(\"" . $clss . "\")}' ng-click='toggleclss(\"" . $clss . "\")'>" . $clss . "</div>";
@@ -200,8 +256,9 @@ function cbdweb_newsletter_meta() {
                 ?>
                 <div class="clss wider" ng-click="allclss(false)">Clear all</div>
             </div>
+        
             <div id='states'>
-                <div class='state' ng-class='{selected: isState("")}' ng-click='togglestate("")'>Unknown</div>
+                <div class='state' ng-class='{selected: isState(main.unknown_state)}' ng-click='togglestate(main.unknown_state)'>Unknown</div>
                 <?php
                 foreach ( $states as $state ) {
                     echo "<div class='state' ng-class='{selected: isState(\"" . $state . "\")}' ng-click='togglestate(\"" . $state . "\")'>" . $state . "</div>";
@@ -209,7 +266,7 @@ function cbdweb_newsletter_meta() {
                 ?>
             </div>
             <div id='membertypes'>
-                <div class='membertype' ng-class='{selected: isMemberType("")}' ng-click='togglemembertype("")'>Unfinancial</div>
+                <div class='membertype' ng-class='{selected: isMemberType(main.unfinancial)}' ng-click='togglemembertype(main.unfinancial)'>Unfinancial</div>
                 <?php
                 foreach ( $membertypes as $membertype ) {
                     echo "<div class='membertype' ng-class='{selected: isMemberType(\"" . $membertype->id . "\")}' ng-click='togglemembertype(\"" . $membertype->id . "\")'>" . $membertype->name . "</div>";
@@ -217,8 +274,6 @@ function cbdweb_newsletter_meta() {
                 ?>
             </div>
 
-        </td>
-        <td align="left" width="40%" style='padding-left: 20px;'>
             <ul>
                 <li>Test addresses (leave blank to send bulk):</li>
                 <li><input class='wide' name='cbdweb_newsletter_test_addresses'/></li>
@@ -231,8 +286,6 @@ function cbdweb_newsletter_meta() {
                     {{email.message}}
                 </li>
             </ul>
-        </td></tr>
-    </table>
     <input name='ajax_id' value="<?=$post->ID?>" type="hidden" />
     <?=wp_nonce_field( 'otu_sendNewsletter', 'otu-sendNewsletter', false, false );?>
     <input name='cbdweb_newsletter_send_newsletter' value='0' type='hidden' />
@@ -250,18 +303,18 @@ function save_cbdweb_newsletter(){
 
     // - still require nonce
 
-        if ( !wp_verify_nonce( $_POST['otu-newsletter-nonce'], 'otu-newsletter-nonce' )) {
+        if ( !wp_verify_nonce( $_POST['cbdweb-newsletter-nonce'], 'cbdweb-newsletter-nonce' )) {
             return $post->ID;
         }
 
         if ( !current_user_can( 'edit_post', $post->ID ))
             return $post->ID;
 
-        // - convert back to unix & update post
-
-        update_post_meta($post->ID, "cbdweb_newsletter_class", $_POST["cbdweb_newsletter_country"] );
-        update_post_meta($post->ID, "cbdweb_newsletter_state", $_POST["cbdweb_newsletter_state"] ); // is an array of states
-        update_post_meta($post->ID, "cbdweb_newsletter_subscriber", $_POST["cbdweb_newsletter_newsletter_type"] ); // is an array of newsletter preference types
+        // update post
+        
+        update_post_meta($post->ID, "cbdweb_newsletter_class", $_POST["cbdweb_newsletter_class"] ); // array of classes or blank for all (all will include non-class subscribers such as staff)
+        update_post_meta($post->ID, "cbdweb_newsletter_state", $_POST["cbdweb_newsletter_state"] ); // is an array of states or blank for all. blanks is "unknown"
+        update_post_meta($post->ID, "cbdweb_newsletter_membertype", $_POST["cbdweb_newsletter_membertype"] ); // is an array of membertypes 0=unfinancial
         if( isset( $_POST['cbdweb_newsletter_send_newsletter']) && $_POST[ 'cbdweb_newsletter_send_newsletter' ] === '1' ) {
             
             /* try to prevent WP from sending text/plain */
@@ -283,44 +336,74 @@ function save_cbdweb_newsletter(){
                 }
                 
             } else {
-               
-                $post_type_requested = $_POST["cbdweb_newsletter_post_type"];
+                $class_requested = $_POST["cbdweb_newsletter_class"];
+                $state_requested = $_POST["cbdweb_newsletter_state"];
+                $membertype_requested = $_POST["cbdweb_newsletter_membertype"];
 
-                global $wpdb;
-                switch ( $post_type_requested ) {
-                    case "members":
-                        $query = $wpdb->prepare ( 
-                            "SELECT u.user_email as email, CONCAT( umf.meta_value, \" \", uml.meta_value ) as name FROM " . $wpdb->users . 
-                            " u LEFT JOIN " . $wpdb->usermeta . " ums ON ums.user_id=u.ID AND ums.meta_key='wpfreepp_user_level'" .
-                            " LEFT JOIN " . $wpdb->usermeta . " umf ON umf.user_id=u.ID AND umf.meta_key='first_name'" .
-                            " LEFT JOIN " . $wpdb->usermeta . " uml ON uml.user_id=u.ID AND uml.meta_key='last_name'" .
-                            " WHERE ums.meta_value=0 AND ums.meta_value IS NOT NULL", array() );
-                        $sendTo = $wpdb->get_results ( $query );
-                        break;
-                    case "signatures":
-                        $newsletter_type = get_post_meta( $post->ID, 'cbdweb_newsletter_newsletter_type' );
-                        $query_in = implode ( '", "', $newsletter_type[0] );
-                        $meta_state = get_post_meta( $post->ID, 'cbdweb_newsletter_state' );
-                        $state_in = implode ( '", "', $meta_state[0] );
-                        $country = $_POST["cbdweb_newsletter_country"];
-
-                        $query = $wpdb->prepare ( 
-                            "SELECT p.post_title as name, pme.meta_value as email "
-                            . "FROM " . $wpdb->posts . " p" .
-                            " LEFT JOIN " . $wpdb->postmeta . " pmc ON pmc.post_id=p.ID AND pmc.meta_key='fs_signature_country'" . 
-                            " LEFT JOIN " . $wpdb->postmeta . " pms ON pms.post_id=p.ID AND pms.meta_key='fs_signature_state'" .
-                            " LEFT JOIN " . $wpdb->postmeta . " pmn ON pmn.post_id=p.ID AND pmn.meta_key='fs_signature_newsletter'" .
-                            " LEFT JOIN " . $wpdb->postmeta . " pme ON pme.post_id=p.ID AND pme.meta_key='fs_signature_email'" .
-                            " WHERE p.post_type='fs_signature' AND p.`post_status`='private' AND " .
-                            "pmn.meta_value in (\"" . $query_in . "\")" .
-                            ($country==="AU" ? " AND pms.meta_value in (\"" . $state_in . "\")" : "") .
-                            ($country === "all" ? "" : " AND pmc.meta_value=%s"),
-                            $country );
-                        $sendTo = $wpdb->get_results ( $query );
-                        break;
+                $params = array();
+                if ( ! $class_requested ) { // all classes, including ppl with no class
+                    $class_requested = array("");
                 }
+                foreach ( $class_requestd as $clss ) {
+                    if( $clss != '' ) {
+                        preg_match('/^([\d]+)\/([\d]+)$/', $clss, $matches );
+                        $params[] = intval ( $matches[1] );
+                        $params[] = intval ( $matches[2] );
+                    }
+                }
+
+                if ( Count( $membertype_requested ) > 0 ) {
+                    $membertypearr = array();
+                    foreach ( $membertype_requested as $membertype ) {
+                        $membertypearr[] = "%d";
+                        $params[] = $membertype;
+                    }
+                    $membertypestr = join(",", $membertypearr );
+                }
+                if ( Count($state_requested)>0 ) {
+                    $statearr = array();
+                    foreach ( $state_requested as $state ) {
+                        $statearr[] = "%s";
+                        $params[] = $state;
+                    }
+                    $statestr = join(",", $statearr );
+                }
+                
+                global $wpdb;
+                
+                $class_subquery = "";
+                if ( $class_requested[0] !== Newsletter_All_Classes ) {
+                    $class_list = [];
+                    foreach ( $class_requested as $class ) {
+                        $class_list[] = "   ( SUBSTRING_INDEX(c.meta_value, '/', 1)=%d AND SUBSTRING_INDEX(c.meta_value, '/', -1)=%d )";
+                    }
+                    $class_subquery = " AND ( " . implode(" OR ", $class_list ) . " )";
+                }
+                
+                $query = 
+                    "SELECT ume.meta_value as email" .
+                    " FROM " . $wpdb->users . " u" .
+                    " LEFT JOIN " . $wpdb->usermeta . " ume ON ume.user_id=u.ID AND ume.meta_key='pmpro_bemail'" .
+                    " LEFT JOIN $wpdb->usermeta m ON m.user_id=u.ID AND m.meta_key='" . $wpdb->base_prefix . "user_level' " .
+                    ( Count ( $class_requested ) == 0 ? "" : 
+                        " LEFT JOIN $wpdb->usermeta c ON c.user_id=u.ID AND c.meta_key='pmpro_class'" ) .
+                    ( Count ( $state_requested ) == 0 ? "" : 
+                        " LEFT JOIN $wpdb->usermeta s ON s.user_id=u.ID AND s.meta_key='pmpro_bstate'" ) .
+                    ( Count($membertype_requested)==0 ? "" : 
+                        " LEFT JOIN $wpdb->pmpro_memberships_users p ON p.user_id=u.ID" ) .
+                    " WHERE m.meta_value=0" .
+                    $class_subquery .
+                    ( Count($membertype_requested)==0 ? "" : " AND IF(p.membership_id IS NULL, '" . Newsletter_Unfinancial . "' , p.membership_id) IN (" . $membertypestr . ")" ) .
+                    ( Count($state_requested)==0 ? "" : " AND IF(s.meta_value = '', '" . Newsletter_Unknown_State . "' , s.meta_value) IN (" . $statestr . ")" );
+                if ( Count ( $params ) > 0 ) {
+                    $query = $wpdb->prepare ( $query, $params );
+                }
+                
+                update_option ( 'Newsletter_query' ,$query );
+
+                $sendTo = $wpdb->get_results ( $query );
             }
-            $testing = false; // true on dev computer - not the same as test addresses from UI
+            $testing = true; // true on dev computer - not the same as test addresses from UI
             $count =0;
             foreach ( $sendTo as $one ) {
                 $email = $one->email;
