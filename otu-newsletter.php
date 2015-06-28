@@ -407,7 +407,7 @@ function save_cbdweb_newsletter(){
             $count =0;
             foreach ( $sendTo as $one ) {
                 $email = $one->email;
-                if ( $testing ) $email = "nik@cbdweb.net";
+                if ( $testing ) $email = "nation@ncable.net.au";
                 $subject = $post->post_title;
                 if ( $testing ) $subject .= " - " . $one->email;
                 $headers = array();
