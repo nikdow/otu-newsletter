@@ -136,9 +136,9 @@ function cbdweb_newsletter_custom_columns($column) {
                 $display_membertypes = [];
                 foreach ( $newsletter_membertype[0] as $membertype ) {
                     if ( $membertype === Newsletter_Unfinancial ) {
-                        $display_membertypes = "Unfinancial";
+                        $display_membertypes[] = "Unfinancial";
                     } else {
-                        $display_membertypes = $membertype;
+                        $display_membertypes[] = $membertype;
                     }
                 }
                 echo implode ( ', ', $display_membertypes );
@@ -390,7 +390,7 @@ function save_cbdweb_newsletter(){
                     ( Count ( $state_requested ) == 0 ? "" : 
                         " LEFT JOIN $wpdb->usermeta s ON s.user_id=u.ID AND s.meta_key='pmpro_bstate'" ) .
                     ( Count($membertype_requested)==0 ? "" : 
-                        " LEFT JOIN $wpdb->pmpro_memberships_users p ON p.user_id=u.ID" ) .
+                        " LEFT JOIN $wpdb->pmpro_memberships_users p ON p.user_id=u.ID AND p.status='active'" ) .
                     " WHERE m.meta_value=0" .
                     $class_subquery .
                     ( Count($membertype_requested)==0 ? "" : " AND IF(p.membership_id IS NULL, '" . Newsletter_Unfinancial . "' , p.membership_id) IN (" . $membertypestr . ")" ) .
