@@ -8,6 +8,7 @@
  * License: GPL2
  */
 require_once plugin_dir_path ( __FILE__ ) . 'options.php';
+require_once plugin_dir_path ( __FILE__ ) . '../pmpro-OTU/paid-memberships-pro.php';
 /*
  * Newsletters
  */
@@ -407,7 +408,7 @@ function save_cbdweb_newsletter(){
             $count =0;
             foreach ( $sendTo as $one ) {
                 $email = $one->email;
-                if ( $testing ) $email = "nation@ncable.net.au";
+                if ( $testing ) $email = "nik@cbdweb.net";
                 $subject = $post->post_title;
                 if ( $testing ) $subject .= " - " . $one->email;
                 $headers = array();
