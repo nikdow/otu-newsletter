@@ -408,13 +408,14 @@ function save_cbdweb_newsletter(){
             $count =0;
             foreach ( $sendTo as $one ) {
                 $email = $one->email;
-                if ( $testing ) $email = "nation@ncable.net.au";
+                if ( $testing ) $email = "nik@cbdweb.net";
                 $subject = $post->post_title;
                 if ( $testing ) $subject .= " - " . $one->email;
                 $headers = array();
                 $headers[] = 'From: ' . get_option('cbdweb-newsletter-sender-name') . " <" . get_option('cbdweb-newsletter-sender-address') . '>';
                 $headers[] = "Content-type: text/html";
                 $message = $post->post_content;
+                $message = str_replace("\r\n", "<br/>\r\n", $message );
                 wp_mail( $email, $subject, $message, $headers );
                 $count++;
                 update_post_meta($post->ID, "cbdweb_newsletter_progress", json_encode( array ( 
