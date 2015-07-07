@@ -404,7 +404,7 @@ function save_cbdweb_newsletter(){
 
                 $sendTo = $wpdb->get_results ( $query );
             }
-            $testing = true; // true on dev computer - not the same as test addresses from UI
+            $testing = false; // true on dev computer - not the same as test addresses from UI
             $count =0;
             foreach ( $sendTo as $one ) {
                 $email = $one->email;
