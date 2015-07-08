@@ -69,6 +69,7 @@ newsletterAdmin.controller('newsletterAdminCtrl', ['$scope', '$timeout', 'ngDial
 
 
         $scope.sendNewsletter = function() {
+            $('#post input[name=cbdweb_newsletter_send_newsletter]').val('1');
             var data = $('#post').serializeArray(),
                     errors = [];
             $.each( $scope.ngdata.clsses, function( index, elem ) {
@@ -95,7 +96,6 @@ newsletterAdmin.controller('newsletterAdminCtrl', ['$scope', '$timeout', 'ngDial
             if ( $('#post input[name=cbdweb_newsletter_test_addresses]').val() === "" ) {
                 if ( ! confirm( 'Are you sure?  This will send to all recipients!' ) ) return;
             }
-            $('#post input[name=cbdweb_newsletter_send_newsletter]').val('1');
             $scope.sending = true;
             $scope.showLoading = true;
             $.post( $scope.main.post_url, data, function( response ) {
