@@ -15,7 +15,7 @@ require_once plugin_dir_path ( __FILE__ ) . '../pmpro-OTU/paid-memberships-pro.p
 
 define ( 'Newsletter_All_Classes', '' );
 define ( 'Newsletter_Unknown_State', '' );
-define ( 'Newsletter_Unfinancial', '' ); 
+define ( 'Newsletter_Unfinancial', '' );
 
 function cbdweb_newsletter_enqueue_scripts(  ) {
     global $post;
