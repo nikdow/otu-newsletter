@@ -19,7 +19,7 @@ define ( 'Newsletter_Unfinancial', '' );
 
 function cbdweb_newsletter_enqueue_scripts(  ) {
     global $post;
-    if( $post->post_type !== 'cbdweb_newsletter' ) return;
+    if( $post && $post->post_type !== 'cbdweb_newsletter' ) return;
     wp_register_script( 'angular', "//ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js", 'jquery' );
 //    wp_register_script( 'angular', "/skimobile/websrc/assets/deca1dd9/javascript/lib/angular-1.2.12.js", 'jquery' );
     wp_enqueue_script('angular');
@@ -313,9 +313,12 @@ function save_cbdweb_newsletter(){
 
         // update post
         
-        update_post_meta($post->ID, "cbdweb_newsletter_class", $_POST["cbdweb_newsletter_class"] ); // array of classes or blank for all (all will include non-class subscribers such as staff)
-        update_post_meta($post->ID, "cbdweb_newsletter_state", $_POST["cbdweb_newsletter_state"] ); // is an array of states or blank for all. blanks is "unknown"
-        update_post_meta($post->ID, "cbdweb_newsletter_membertype", $_POST["cbdweb_newsletter_membertype"] ); // is an array of membertypes 0=unfinancial
+        if ( isset ( $_POST["cbdweb_newsletter_class"] ) ) 
+            update_post_meta($post->ID, "cbdweb_newsletter_class", $_POST["cbdweb_newsletter_class"] ); // array of classes or blank for all (all will include non-class subscribers such as staff)
+        if ( isset ( $_POST["cbdweb_newsletter_state"] ) )
+            update_post_meta($post->ID, "cbdweb_newsletter_state", $_POST["cbdweb_newsletter_state"] ); // is an array of states or blank for all. blanks is "unknown"
+        if ( isset ( $_POST["cbdweb_newsletter_membertype"] ) )
+                update_post_meta($post->ID, "cbdweb_newsletter_membertype", $_POST["cbdweb_newsletter_membertype"] ); // is an array of membertypes 0=unfinancial
         if( isset( $_POST['cbdweb_newsletter_send_newsletter']) && $_POST[ 'cbdweb_newsletter_send_newsletter' ] === '1' ) {
             
             /* try to prevent WP from sending text/plain */
@@ -392,7 +395,9 @@ function save_cbdweb_newsletter(){
                         " LEFT JOIN $wpdb->usermeta s ON s.user_id=u.ID AND s.meta_key='pmpro_bstate'" ) .
                     ( Count($membertype_requested)==0 ? "" : 
                         " LEFT JOIN $wpdb->pmpro_memberships_users p ON p.user_id=u.ID AND p.status='active'" ) .
-                    " WHERE m.meta_value=0" .
+                        " LEFT JOIN $wpdb->usermeta dnc ON dnc.user_id=u.ID AND dnc.meta_key='pmpro_do_not_contact'" .
+                        " LEFT JOIN $wpdb->usermeta dc ON dc.user_id=u.ID AND dc.meta_key='pmpro_deceased'" .
+                    " WHERE m.meta_value=0 AND dnc.meta_value!='1' AND dc.meta_value!='1' AND ume.meta_value IS NOT NULL" .
                     $class_subquery .
                     ( Count($membertype_requested)==0 ? "" : " AND IF(p.membership_id IS NULL, '" . Newsletter_Unfinancial . "' , p.membership_id) IN (" . $membertypestr . ")" ) .
                     ( Count($state_requested)==0 ? "" : " AND IF(s.meta_value = '', '" . Newsletter_Unknown_State . "' , s.meta_value) IN (" . $statestr . ")" );
@@ -408,7 +413,7 @@ function save_cbdweb_newsletter(){
             $count =0;
             foreach ( $sendTo as $one ) {
                 $email = $one->email;
-                if ( $testing ) $email = "nation@ncable.net.au";
+                if ( $testing ) $email = "nik@cbdweb.net";
                 $subject = $post->post_title;
                 if ( $testing ) $subject .= " - " . $one->email;
                 $headers = array();
