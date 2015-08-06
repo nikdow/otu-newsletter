@@ -67,7 +67,12 @@ function create_cbdweb_newsletter() {
             'exclude_from_search' => false,
             'has_archive' => true,
             'show_ui' => true,
-            'capability_type' => 'post',
+            'capabilities' =>array(
+                'edit_post'=>'otu_newsletter_edit',
+                'edit_posts'=>'otu_newsletter_edit',
+                'edit_others_posts'=>'otu_newsletter_edit',
+                'publish_posts'=>'otu_newsletter_edit',
+            ),
             'menu_icon' => "dashicons-megaphone",
             'hierarchical' => false,
             'rewrite' => false,
@@ -319,7 +324,10 @@ function save_cbdweb_newsletter(){
             update_post_meta($post->ID, "cbdweb_newsletter_state", $_POST["cbdweb_newsletter_state"] ); // is an array of states or blank for all. blanks is "unknown"
         if ( isset ( $_POST["cbdweb_newsletter_membertype"] ) )
                 update_post_meta($post->ID, "cbdweb_newsletter_membertype", $_POST["cbdweb_newsletter_membertype"] ); // is an array of membertypes 0=unfinancial
-        if( isset( $_POST['cbdweb_newsletter_send_newsletter']) && $_POST[ 'cbdweb_newsletter_send_newsletter' ] === '1' ) {
+        if( isset( $_POST['cbdweb_newsletter_send_newsletter']) && $_POST[ 'cbdweb_newsletter_send_newsletter' ] === '1' 
+            &&
+                current_user_can( 'otu_newsletter_send')
+        ) {
             
             /* try to prevent WP from sending text/plain */
             add_filter( 'wp_mail_content_type', 'set_content_type' );
@@ -504,3 +512,14 @@ function cbdweb_newsletter_content( $content, $post ) {
                 $template );
     return $content;
 }
+function otu_newsletter_activation() {
+    add_role( 'otu_newsletter_editor', 'OTU Newsletter Editor', array(
+        "otu_newsletter_send"=>true,
+        "otu_newsletter_edit"=>true,
+    ) );
+}
+function otu_newsletter_deactivation() {
+    remove_role ( 'otu_newsletter_editor' );
+}
+register_activation_hook(__FILE__, 'otu_newsletter_activation');
+register_deactivation_hook(__FILE__, 'otu_newsletter_deactivation');
