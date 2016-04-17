@@ -8,7 +8,7 @@
  * License: GPL2
  */
 require_once plugin_dir_path ( __FILE__ ) . 'options.php';
-require_once plugin_dir_path ( __FILE__ ) . '../pmpro-OTU/paid-memberships-pro.php';
+require_once plugin_dir_path ( __FILE__ ) . '../paid-memberships-pro/paid-memberships-pro.php';
 /*
  * Newsletters
  */
