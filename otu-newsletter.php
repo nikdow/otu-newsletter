@@ -216,11 +216,12 @@ function cbdweb_newsletter_meta() {
     $results = $wpdb->get_results ( $query, OBJECT );
     $classes = array();
     foreach ( $results as $result ) {
-        $match = preg_match('/^([\d]+)\/([\d]+)$/', $result->clss, $matches );
+        $match = preg_match('/^([\d]+)\/([\d]+)([a-zA-Z]+)?$/', $result->clss, $matches );
         if( $match ) {
             $term = intval( $matches[1] );
             $year = intval( $matches[2] );
-            $arr = array('term'=>$term, 'year'=>$year );
+            $suffix = $matches[3] ? $matches[3] : "";
+            $arr = array('term'=>$term, 'year'=>$year, 'suffix'=>$suffix );
             if( array_search ( $arr, $classes ) === false ) {
                 $classes[] = $arr;
             }
@@ -229,13 +230,14 @@ function cbdweb_newsletter_meta() {
     function sortclass($a, $b) {
         $va = $a['year'] * 1000 + $a['term'];
         $vb = $b['year'] * 1000 + $b['term'];
-        if ( $va == $vb ) return 0;
+        if( $va === $vb && $a['suffix'] === $b['suffix'] ) return 0;
+        if( $va === $vb ) return $a['suffix'] < $b['suffix'] ? -1 : 1;
         return ( $va < $vb ) ? -1 : 1;
     }
     usort ( $classes, "sortclass" );
     $clsses = array();
     foreach ( $classes as $class ) {
-        $clsses[] =  $class['term'] . "/" . $class['year'];
+        $clsses[] =  $class['term'] . "/" . $class['year'] . $class['suffix'];
     }
     $data['clsses'] = $clsses;
     
@@ -358,9 +360,10 @@ function save_cbdweb_newsletter(){
                 }
                 foreach ( $class_requested as $clss ) {
                     if( $clss != '' ) {
-                        preg_match('/^([\d]+)\/([\d]+)$/', $clss, $matches );
+                        preg_match('/^([\d]+)\/([\d]+)([a-zA-Z]+)?$/', $clss, $matches );
                         $params[] = intval ( $matches[1] );
-                        $params[] = intval ( $matches[2] );
+                        $params[] = intval ( $matches[2] ) . ( $matches[3] ? $matches[3] : "");
+                        
                     }
                 }
 
@@ -387,7 +390,7 @@ function save_cbdweb_newsletter(){
                 if ( $class_requested[0] !== Newsletter_All_Classes ) {
                     $class_list = [];
                     foreach ( $class_requested as $class ) {
-                        $class_list[] = "   ( SUBSTRING_INDEX(c.meta_value, '/', 1)=%d AND SUBSTRING_INDEX(c.meta_value, '/', -1)=%d )";
+                        $class_list[] = "   ( SUBSTRING_INDEX(c.meta_value, '/', 1)=%d AND SUBSTRING_INDEX(c.meta_value, '/', -1)=%s )";
                     }
                     $class_subquery = " AND ( " . implode(" OR ", $class_list ) . " )";
                 }
@@ -435,7 +438,7 @@ function save_cbdweb_newsletter(){
                     'count'=>$count, 'total'=>Count( $sendTo ),
                     'message'=>'last email sent: ' . $email,
                 ) ) );
-                if ( $testing && $count > 5 ) break;
+                if ( $testing && $count > 15 ) break;
             }
             echo json_encode( array ( "success"=>"completed: " . $count . " emails" ) );
             die;
