@@ -487,7 +487,7 @@ function cbdweb_newsletter_enter_title( $input ) {
     global $post_type;
 
     if ( 'cbdweb_newsletter' === $post_type ) {
-        return __( 'Newsletter (email) subject' );
+        return __( '' );
     }
     return $input;
 }
