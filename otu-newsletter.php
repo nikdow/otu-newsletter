@@ -287,12 +287,6 @@ function cbdweb_newsletter_meta() {
                 <li><input class='wide' name='cbdweb_newsletter_test_addresses'/></li>
                 <li><button type="button" ng-click="sendNewsletter()">Send newsletter</button></li>
                 <li ng-show="showLoading"><img src="<?php echo get_site_url();?>/wp-includes/js/thickbox/loadingAnimation.gif"></li>
-                <li ng-show='showProgressNumber'>
-                    {{email.count}} sent of {{email.total}}
-                </li>
-                <li ng-show='showProgressMessage'>
-                    {{email.message}}
-                </li>
             </ul>
     <input name='ajax_id' value="<?=$post->ID?>" type="hidden" />
     <?=wp_nonce_field( 'otu_sendNewsletter', 'otu-sendNewsletter', false, false );?>
@@ -338,9 +332,7 @@ function save_cbdweb_newsletter(){
             }
             
             $test_addresses = $_POST['cbdweb_newsletter_test_addresses'];
-            session_write_close (); // avoid session locking blocking progess ajax calls
-            update_post_meta($post->ID, "cbdweb_newsletter_progress", json_encode( array ( 'count'=>0, 'total'=>Count( $sendTo ), 'message'=>'querying the database' ) ) );
-                    
+
             if( $test_addresses !== "" ) {
                 
                 $addressArray = explode(",", $test_addresses );
@@ -434,23 +426,12 @@ function save_cbdweb_newsletter(){
                 $message = str_replace("\r\n", "<br>\r\n", $message );
                 wp_mail( $email, $subject, $message, $headers );
                 $count++;
-                update_post_meta($post->ID, "cbdweb_newsletter_progress", json_encode( array ( 
-                    'count'=>$count, 'total'=>Count( $sendTo ),
-                    'message'=>'last email sent: ' . $email,
-                ) ) );
                 if ( $testing && $count > 15 ) break;
             }
             echo json_encode( array ( "success"=>"completed: " . $count . " emails" ) );
             die;
         }
     }
-}
-
-add_action( 'wp_ajax_cbdweb_newsletter_progress', 'cbdweb_newsletter_progress' );
-function cbdweb_newsletter_progress() {
-    $post_id = $_POST['post_id'];
-    echo get_post_meta( $post_id, 'cbdweb_newsletter_progress', true );
-    die;
 }
 
 add_filter('post_updated_messages', 'cbdweb_newsletter_updated_messages');
