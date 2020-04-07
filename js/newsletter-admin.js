@@ -105,6 +105,7 @@ newsletterAdmin.controller('newsletterAdminCtrl', ['$scope', '$timeout', 'ngDial
                 $scope.email = $scope.email || {};
                 $scope.email.message = ajaxdata.success;
                 $scope.$apply();
+                ngDialog.open({template:ajaxdata.success, plain:true});
                 $('#post input[name=cbdweb_newsletter_send_newsletter]').val('0');
             });
         };
