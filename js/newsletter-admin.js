@@ -101,7 +101,6 @@ newsletterAdmin.controller('newsletterAdminCtrl', ['$scope', '$timeout', 'ngDial
             $.post( $scope.main.post_url, data, function( response ) {
                 $scope.showLoading = false;
                 var ajaxdata = $.parseJSON( response );
-                $timeout.cancel ( $scope.progress );
                 $scope.sending = false;
                 $scope.email = $scope.email || {};
                 $scope.email.message = ajaxdata.success;

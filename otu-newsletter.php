@@ -413,7 +413,10 @@ function save_cbdweb_newsletter(){
                 $sendTo = $wpdb->get_results ( $query );
             }
             $testing = false; // true on dev computer - not the same as test addresses from UI
-            $count =0;
+            $count = Count( $sendTo );
+            echo json_encode( array ( "success"=>"completed: " . $count . " emails" ) );
+            fastcgi_finish_request(); // finish the page and return to browser
+            session_write_close(); // don't lock session while we send out the emails
             foreach ( $sendTo as $one ) {
                 $email = $one->email;
                 if ( $testing ) $email = "nik@cbdweb.net";
@@ -425,11 +428,8 @@ function save_cbdweb_newsletter(){
                 $message = $post->post_content;
                 $message = str_replace("\r\n", "<br>\r\n", $message );
                 wp_mail( $email, $subject, $message, $headers );
-                $count++;
                 if ( $testing && $count > 15 ) break;
             }
-            echo json_encode( array ( "success"=>"completed: " . $count . " emails" ) );
-            die;
         }
     }
 }
