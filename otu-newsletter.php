@@ -82,7 +82,7 @@ function create_cbdweb_newsletter() {
     );
 }
 /*
- * specify columns in admin view of signatures custom post listing
+ * specify columns in admin view of custom post listing
  */
 add_filter ( "manage_edit-cbdweb_newsletter_columns", "cbdweb_newsletter_edit_columns" );
 add_action ( "manage_posts_custom_column", "cbdweb_newsletter_custom_columns" );
@@ -93,6 +93,7 @@ function cbdweb_newsletter_edit_columns($columns) {
         "cbdweb_col_class" => "Class",
         "cbdweb_col_state" => "State",
         "cbdweb_col_membertype" => "Subscriber",
+        "cbdweb_col_count" => "Number Queued"
     );
     return $columns;
 }
@@ -101,6 +102,7 @@ function cbdweb_newsletter_custom_columns($column) {
     $newsletter_class = get_post_meta( $post->ID, 'cbdweb_newsletter_class' );
     $newsletter_state = get_post_meta( $post->ID, "cbdweb_newsletter_state" );
     $newsletter_membertype = get_post_meta ( $post->ID, "cbdweb_newsletter_membertype" );
+    $newsletter_count = get_post_meta ( $post->ID, "cbdweb_newsletter_count" );
     switch ( $column ) {
         case "title":
             echo $post->post_title;
@@ -149,6 +151,9 @@ function cbdweb_newsletter_custom_columns($column) {
                 }
                 echo implode ( ', ', $display_membertypes );
             }
+            break;
+        case "cbdweb_col_count":
+            echo $newsletter_count;
             break;
     }
 }
@@ -291,7 +296,10 @@ function cbdweb_newsletter_meta() {
     <input name='ajax_id' value="<?=$post->ID?>" type="hidden" />
     <?=wp_nonce_field( 'otu_sendNewsletter', 'otu-sendNewsletter', false, false );?>
     <input name='cbdweb_newsletter_send_newsletter' value='0' type='hidden' />
-    <?php 
+    <?php
+    if( get_post_meta ( $post->ID, 'cbdweb_newsletter_count' ) ){ ?>
+        Number queued for sending: <?=get_post_meta ( $post->ID, 'cbdweb_newsletter_count' )?>
+    <?php }
 }
 
 add_action ('save_post', 'save_cbdweb_newsletter');
@@ -400,7 +408,7 @@ function save_cbdweb_newsletter(){
                         " LEFT JOIN $wpdb->pmpro_memberships_users p ON p.user_id=u.ID AND p.status='active'" ) .
                         " LEFT JOIN $wpdb->usermeta dnc ON dnc.user_id=u.ID AND dnc.meta_key='pmpro_do_not_contact'" .
                         " LEFT JOIN $wpdb->usermeta dc ON dc.user_id=u.ID AND dc.meta_key='pmpro_deceased'" .
-                    " WHERE m.meta_value=0 AND dnc.meta_value!='1' AND dc.meta_value!='1' AND ume.meta_value IS NOT NULL" .
+                    " WHERE m.meta_value=0 AND dnc.meta_value!='1' AND dc.meta_value!='1' AND ume.meta_value IS NOT NULL AND TRIM(ume.meta_value) != ''" .
                     $class_subquery .
                     ( Count($membertype_requested)==0 ? "" : " AND IF(p.membership_id IS NULL, '" . Newsletter_Unfinancial . "' , p.membership_id) IN (" . $membertypestr . ")" ) .
                     ( Count($state_requested)==0 ? "" : " AND IF(s.meta_value = '', '" . Newsletter_Unknown_State . "' , s.meta_value) IN (" . $statestr . ")" );
@@ -414,6 +422,7 @@ function save_cbdweb_newsletter(){
             }
             $testing = false; // true on dev computer - not the same as test addresses from UI
             $count = Count( $sendTo );
+            update_post_meta($post->ID, "cbdweb_newsletter_count", $count );
             echo json_encode( array ( "success"=>"completed: " . $count . " emails" ) );
             fastcgi_finish_request(); // finish the page and return to browser
             session_write_close(); // don't lock session while we send out the emails
