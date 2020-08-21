@@ -153,7 +153,7 @@ function cbdweb_newsletter_custom_columns($column) {
             }
             break;
         case "cbdweb_col_count":
-            echo $newsletter_count;
+            echo $newsletter_count[0];
             break;
     }
 }
@@ -298,7 +298,7 @@ function cbdweb_newsletter_meta() {
     <input name='cbdweb_newsletter_send_newsletter' value='0' type='hidden' />
     <?php
     if( get_post_meta ( $post->ID, 'cbdweb_newsletter_count' ) ){ ?>
-        Number queued for sending: <?=get_post_meta ( $post->ID, 'cbdweb_newsletter_count' )?>
+        Number queued for sending: <?=get_post_meta ( $post->ID, 'cbdweb_newsletter_count' )[0]?>
     <?php }
 }
 
