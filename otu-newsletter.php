@@ -408,7 +408,7 @@ function save_cbdweb_newsletter(){
                         " LEFT JOIN $wpdb->pmpro_memberships_users p ON p.user_id=u.ID AND p.status='active'" ) .
                         " LEFT JOIN $wpdb->usermeta dnc ON dnc.user_id=u.ID AND dnc.meta_key='pmpro_do_not_contact'" .
                         " LEFT JOIN $wpdb->usermeta dc ON dc.user_id=u.ID AND dc.meta_key='pmpro_deceased'" .
-                    " WHERE m.meta_value=0 AND dnc.meta_value!='1' AND dc.meta_value!='1' AND ume.meta_value IS NOT NULL AND TRIM(ume.meta_value) != ''" .
+                    " WHERE m.meta_value=0 AND dnc.meta_value!='1' AND dc.meta_value!='1' AND ume.meta_value IS NOT NULL" .
                     $class_subquery .
                     ( Count($membertype_requested)==0 ? "" : " AND IF(p.membership_id IS NULL, '" . Newsletter_Unfinancial . "' , p.membership_id) IN (" . $membertypestr . ")" ) .
                     ( Count($state_requested)==0 ? "" : " AND IF(s.meta_value = '', '" . Newsletter_Unknown_State . "' , s.meta_value) IN (" . $statestr . ")" );
