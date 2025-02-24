@@ -420,7 +420,7 @@ function save_cbdweb_newsletter(){
 
                 $sendTo = $wpdb->get_results ( $query );
             }
-            $testing = true; // true on dev computer - not the same as test addresses from UI
+            $testing = false; // true on dev computer - not the same as test addresses from UI
             $count = Count( $sendTo );
             update_post_meta($post->ID, "cbdweb_newsletter_count", $count );
             echo json_encode( array ( "success"=>"completed: " . $count . " emails" ) );
