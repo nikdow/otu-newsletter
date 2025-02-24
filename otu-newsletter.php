@@ -420,22 +420,22 @@ function save_cbdweb_newsletter(){
 
                 $sendTo = $wpdb->get_results ( $query );
             }
-            $testing = false; // true on dev computer - not the same as test addresses from UI
+            $testing = true; // true on dev computer - not the same as test addresses from UI
             $count = Count( $sendTo );
             update_post_meta($post->ID, "cbdweb_newsletter_count", $count );
             echo json_encode( array ( "success"=>"completed: " . $count . " emails" ) );
             fastcgi_finish_request(); // finish the page and return to browser
             session_write_close(); // don't lock session while we send out the emails
+            $subject = $post->post_title;
+            $headers = array();
+            $headers[] = 'From: ' . get_option('cbdweb-newsletter-sender-name') . " <" . get_option('cbdweb-newsletter-sender-address') . '>';
+            $headers[] = "Content-type: text/html";
+            $message = $post->post_content;
             foreach ( $sendTo as $one ) {
                 $email = $one->email;
                 if ( $testing ) $email = "nik@cbdweb.net";
-                $subject = $post->post_title;
+                if( ! $email ) continue;
                 if ( $testing ) $subject .= " - " . $one->email;
-                $headers = array();
-                $headers[] = 'From: ' . get_option('cbdweb-newsletter-sender-name') . " <" . get_option('cbdweb-newsletter-sender-address') . '>';
-                $headers[] = "Content-type: text/html";
-                $message = $post->post_content;
-                $message = str_replace("\r\n", "<br>\r\n", $message );
                 wp_mail( $email, $subject, $message, $headers );
                 if ( $testing && $count > 15 ) break;
             }
