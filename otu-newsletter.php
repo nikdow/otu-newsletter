@@ -108,7 +108,7 @@ function cbdweb_newsletter_custom_columns($column) {
             echo $post->post_title;
             break;
         case "cbdweb_col_class":
-            if ( ! is_array( $newsletter_class[0] ) ) {
+            if ( ! is_array( $newsletter_class[0]??false ) ) {
                 echo "&nbsp;";
             } else {
                 $display_classes = [];
