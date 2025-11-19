@@ -226,7 +226,7 @@ function cbdweb_newsletter_meta() {
         if( $match ) {
             $term = intval( $matches[1] );
             $year = intval( $matches[2] );
-            $suffix = $matches[3] ? $matches[3] : "";
+            $suffix = $matches[3]??"";
             $arr = array('term'=>$term, 'year'=>$year, 'suffix'=>$suffix );
             if( array_search ( $arr, $classes ) === false ) {
                 $classes[] = $arr;
@@ -310,7 +310,7 @@ function save_cbdweb_newsletter(){
     
     global $post;
     
-    if( 'cbdweb_newsletter' === $_POST['post_type'] ) {
+    if( 'cbdweb_newsletter' === $_POST['post_type']??'' ) {
 
     // - still require nonce
 
