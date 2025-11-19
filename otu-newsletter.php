@@ -78,6 +78,7 @@ function create_cbdweb_newsletter() {
             'rewrite' => false,
             'supports'=> array('title', 'editor' ) ,
             'show_in_nav_menus' => true,
+            'show_in_rest' => true,
         )
     );
 }
