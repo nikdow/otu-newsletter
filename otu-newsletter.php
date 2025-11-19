@@ -311,29 +311,40 @@ function save_cbdweb_newsletter(){
     global $post;
     
     if( 'cbdweb_newsletter' === $_POST['post_type']??'' ) {
+      error_log( 'saving cbdweb_newsletter' );
 
     // - still require nonce
 
         if ( !wp_verify_nonce( $_POST['cbdweb-newsletter-nonce'], 'cbdweb-newsletter-nonce' )) {
+          error_log('nonce verification failed');
             return $post->ID;
         }
 
-        if ( !current_user_can( 'edit_post', $post->ID ))
-            return $post->ID;
+        if ( !current_user_can( 'edit_post', $post->ID )) {
+          error_log('current user cannot edit post');
+          return $post->ID;
+        }
 
         // update post
         
-        if ( isset ( $_POST["cbdweb_newsletter_class"] ) ) 
-            update_post_meta($post->ID, "cbdweb_newsletter_class", $_POST["cbdweb_newsletter_class"] ); // array of classes or blank for all (all will include non-class subscribers such as staff)
-        if ( isset ( $_POST["cbdweb_newsletter_state"] ) )
-            update_post_meta($post->ID, "cbdweb_newsletter_state", $_POST["cbdweb_newsletter_state"] ); // is an array of states or blank for all. blanks is "unknown"
-        if ( isset ( $_POST["cbdweb_newsletter_membertype"] ) )
-                update_post_meta($post->ID, "cbdweb_newsletter_membertype", $_POST["cbdweb_newsletter_membertype"] ); // is an array of membertypes 0=unfinancial
+        if ( isset ( $_POST["cbdweb_newsletter_class"] ) ) {
+          error_log('update_post_meta');
+          update_post_meta($post->ID, "cbdweb_newsletter_class", $_POST["cbdweb_newsletter_class"]); // array of classes or blank for all (all will include non-class subscribers such as staff)
+          }
+        if ( isset ( $_POST["cbdweb_newsletter_state"] ) ) {
+          error_log('cbdweb_newsletter_state');
+          update_post_meta($post->ID, "cbdweb_newsletter_state", $_POST["cbdweb_newsletter_state"]); // is an array of states or blank for all. blanks is "unknown"
+          }
+        if ( isset ( $_POST["cbdweb_newsletter_membertype"] ) ) {
+          error_log('cbdweb_newsletter_membertype');
+          update_post_meta($post->ID, "cbdweb_newsletter_membertype", $_POST["cbdweb_newsletter_membertype"]); // is an array of membertypes 0=unfinancial
+          }
+        error_log( 'cbdweb_newsletter_send_newsletter = ' . $_POST['cbdweb_newsletter_send_newsletter'] );
         if( isset( $_POST['cbdweb_newsletter_send_newsletter']) && $_POST[ 'cbdweb_newsletter_send_newsletter' ] === '1' 
             &&
                 current_user_can( 'otu_newsletter_send')
         ) {
-            
+            error_log('send newsletter');
             /* try to prevent WP from sending text/plain */
             add_filter( 'wp_mail_content_type', 'set_content_type' );
             function set_content_type( $content_type ){
@@ -341,6 +352,7 @@ function save_cbdweb_newsletter(){
             }
             
             $test_addresses = $_POST['cbdweb_newsletter_test_addresses'];
+            error_log( 'test addresses = ' . $_POST['cbdweb_newsletter_test_addresses'] );
 
             if( $test_addresses !== "" ) {
                 
@@ -423,6 +435,7 @@ function save_cbdweb_newsletter(){
             }
             $testing = false; // true on dev computer - not the same as test addresses from UI
             $count = Count( $sendTo );
+            error_log('count = ' . $count);
             update_post_meta($post->ID, "cbdweb_newsletter_count", $count );
             echo json_encode( array ( "success"=>"completed: " . $count . " emails" ) );
             fastcgi_finish_request(); // finish the page and return to browser
@@ -434,9 +447,11 @@ function save_cbdweb_newsletter(){
             $message = $post->post_content;
             foreach ( $sendTo as $one ) {
                 $email = $one->email;
+                error_log('email = ' . $email);
                 if ( $testing ) $email = "nik@cbdweb.net";
                 if( ! $email ) continue;
                 if ( $testing ) $subject .= " - " . $one->email;
+                error_log('subject = ' . $subject);
                 wp_mail( $email, $subject, $message, $headers );
                 if ( $testing && $count > 15 ) break;
             }
