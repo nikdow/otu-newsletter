@@ -78,7 +78,6 @@ function create_cbdweb_newsletter() {
             'rewrite' => false,
             'supports'=> array('title', 'editor' ) ,
             'show_in_nav_menus' => true,
-            'show_in_rest' => true,
         )
     );
 }
@@ -124,7 +123,7 @@ function cbdweb_newsletter_custom_columns($column) {
             }
             break;
         case "cbdweb_col_state":
-            if ( ! is_array( $newsletter_state[0] ) ) {
+            if ( ! is_array( $newsletter_state[0]??'' ) ) {
                 echo "&nbsp;";
             } else {
                 $display_states = [];
@@ -139,7 +138,7 @@ function cbdweb_newsletter_custom_columns($column) {
             }
             break;
         case "cbdweb_col_membertype":
-            if ( ! is_array( $newsletter_membertype[0] ) ) {
+            if ( ! is_array( $newsletter_membertype[0]??'' ) ) {
                 echo "&nbsp;";
             } else {
                 $display_membertypes = [];
@@ -154,7 +153,7 @@ function cbdweb_newsletter_custom_columns($column) {
             }
             break;
         case "cbdweb_col_count":
-            echo $newsletter_count[0];
+            echo $newsletter_count[0]??0;
             break;
     }
 }
@@ -185,11 +184,11 @@ function cbdweb_newsletter_meta() {
     $ngdata['membertypes'] = array();  // $ngdata is the meta data status for display and return, includes selected objects
     foreach( $membertypes as $membertype ) {
         $data['membertypes'][] = array('id'=>$membertype->id, 'name'=>$membertype->name );
-        if ( is_array ( $meta_membertype[0] ) && in_array ( $membertype->id, $meta_membertype[0] ) )
+        if ( is_array ( $meta_membertype[0]??'' ) && in_array ( $membertype->id, $meta_membertype[0] ) )
             $ngdata['membertypes'][] = $membertype->id;
     }
     $data['membertypes'][] = array('id'=>'', 'name'=>"unfinancial");
-    if ( is_array( $meta_membertype[0] ) && in_array ( Newsletter_Unfinancial, $meta_membertype[0] ) )
+    if ( is_array( $meta_membertype[0]??'' ) && in_array ( Newsletter_Unfinancial, $meta_membertype[0] ) )
         $ngdata['membertypes'][] = Newsletter_Unfinancial;
     
     /*
@@ -207,11 +206,11 @@ function cbdweb_newsletter_meta() {
     $data['states'] = $states;
     $ngdata['states'] = array();
     foreach($data['states'] as $ab ) {
-        if ( is_array( $meta_state[0] ) && in_array( $ab, $meta_state[0] ) )
+        if ( is_array( $meta_state[0]??'' ) && in_array( $ab, $meta_state[0] ) )
             $ngdata['states'][] = $ab;
     }
     $data['states'][] = "Unknown";
-    if ( is_array ( $meta_state[0] ) && in_array ( Newsletter_Unknown_State, $meta_state[0] ) )
+    if ( is_array ( $meta_state[0]??'' ) && in_array ( Newsletter_Unknown_State, $meta_state[0] ) )
         $ngdata['states'][] = Newsletter_Unknown_State;
     
     /*
@@ -249,10 +248,10 @@ function cbdweb_newsletter_meta() {
     
     $ngdata['clsses'] = array();
     foreach($data['clsses'] as $ab ) {
-        if ( is_array ( $meta_class[0] ) && in_array ( $ab, $meta_class[0] ) )
+        if ( is_array ( $meta_class[0]??'' ) && in_array ( $ab, $meta_class[0] ) )
             $ngdata['clsses'][] = $ab;
     }
-    if ( is_array ( $meta_class[0] ) && in_array( Newsletter_All_Classes, $meta_class[0] ) )
+    if ( is_array ( $meta_class[0]??'' ) && in_array( Newsletter_All_Classes, $meta_class[0] ) )
         $ngdata['clsses'][] = Newsletter_All_Classes;
     ?>
     <script type="text/javascript">
@@ -310,8 +309,7 @@ function save_cbdweb_newsletter(){
     
     global $post;
     
-    if( 'cbdweb_newsletter' === $_POST['post_type']??'' ) {
-      error_log( 'saving cbdweb_newsletter' );
+    if( array_key_exists('post_type', $_POST) && 'cbdweb_newsletter' === $_POST['post_type']??'' ) {
 
     // - still require nonce
 
